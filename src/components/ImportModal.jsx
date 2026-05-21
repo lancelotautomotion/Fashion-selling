@@ -4,14 +4,13 @@ import { CATEGORIES } from '../data/initialData.js';
 import { resizeImageFile } from '../utils/imageUtils.js';
 
 const TODAY = new Date().toISOString().slice(0, 10);
-const INPUT = 'w-full border border-ink-200 rounded-lg px-2.5 py-1.5 text-sm bg-white focus-ring transition-all';
 
 let uid = 0;
 const newEntry = () => ({
   _key: ++uid,
   image: null,
   name: '',
-  category: CATEGORIES[6], // T-shirts & Tops default
+  category: CATEGORIES[6], // T-shirts & Tops
   brand: '',
   purchasePrice: '',
   listedPrice: '',
@@ -20,56 +19,26 @@ const newEntry = () => ({
 });
 
 export default function ImportModal({ open, onClose, onImport }) {
-  const [screenshot, setScreenshot]     = useState(null);
-  const [screenshotUrl, setScreenshotUrl] = useState(null);
-  const [entries, setEntries]           = useState([newEntry()]);
-  const [showScreenshot, setShowScreenshot] = useState(true);
-  const screenshotRef = useRef(null);
+  const [entries, setEntries] = useState([newEntry(), newEntry(), newEntry()]);
   const endRef = useRef(null);
 
   useEffect(() => {
-    if (open) {
-      setScreenshot(null);
-      setScreenshotUrl(null);
-      setEntries([newEntry()]);
-      setShowScreenshot(true);
-    }
+    if (open) setEntries([newEntry(), newEntry(), newEntry()]);
   }, [open]);
 
   if (!open) return null;
 
-  /* ── Screenshot handling ── */
-  const handleScreenshotChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setScreenshotUrl(url);
-    setScreenshot(file);
-    e.target.value = '';
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const url = URL.createObjectURL(file);
-    setScreenshotUrl(url);
-    setScreenshot(file);
-  };
-
-  /* ── Entry handling ── */
-  const setEntry = (key, field, value) => {
+  /* ── Entry handlers ── */
+  const setEntry = (key, field, value) =>
     setEntries((prev) => prev.map((e) => e._key === key ? { ...e, [field]: value } : e));
-  };
 
   const addEntry = () => {
     setEntries((prev) => [...prev, newEntry()]);
     setTimeout(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
   };
 
-  const removeEntry = (key) => {
+  const removeEntry = (key) =>
     setEntries((prev) => prev.filter((e) => e._key !== key));
-  };
 
   const handleEntryImage = async (key, file) => {
     if (!file) return;
@@ -104,19 +73,19 @@ export default function ImportModal({ open, onClose, onImport }) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-float w-full max-w-2xl anim-slide flex flex-col max-h-[92vh]"
+        className="bg-white rounded-2xl shadow-float w-full max-w-xl anim-slide flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
-              <Icon name="camera" size={18} />
+              <Icon name="plus" size={18} />
             </div>
             <div>
-              <h2 className="text-[16px] font-semibold text-ink-900">Importer depuis une capture</h2>
+              <h2 className="text-[16px] font-semibold text-ink-900">Ajouter plusieurs articles</h2>
               <p className="text-[12px] text-ink-400">
-                Ajoutez votre capture en référence, puis saisissez vos articles
+                Renseignez vos articles en lot, puis importez tout d'un coup
               </p>
             </div>
           </div>
@@ -125,84 +94,17 @@ export default function ImportModal({ open, onClose, onImport }) {
           </button>
         </div>
 
-        {/* ── Scrollable body ── */}
+        {/* Scrollable list */}
         <form onSubmit={handleSubmit} className="overflow-y-auto flex-1 flex flex-col">
+          <div className="px-6 py-4 space-y-3">
 
-          {/* Screenshot section */}
-          <div className="px-6 pt-5 pb-4 border-b border-ink-100">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[12px] font-medium text-ink-600">
-                Capture de référence (optionnelle)
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-ink-500 uppercase tracking-wide">
+                Articles
               </span>
-              {screenshotUrl && (
-                <button
-                  type="button"
-                  onClick={() => setShowScreenshot((v) => !v)}
-                  className="text-[11px] text-brand-600 hover:underline"
-                >
-                  {showScreenshot ? 'Masquer' : 'Afficher'}
-                </button>
-              )}
-            </div>
-
-            {!screenshotUrl ? (
-              /* Upload zone */
-              <div
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-                onClick={() => screenshotRef.current?.click()}
-                className="border-2 border-dashed border-ink-200 hover:border-brand-400 hover:bg-brand-50/20 rounded-xl p-6 flex items-center gap-4 cursor-pointer transition-colors"
-              >
-                <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                  <Icon name="upload-cloud" size={20} />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-ink-800">
-                    Glissez votre capture ici ou cliquez pour parcourir
-                  </div>
-                  <div className="text-[12px] text-ink-400 mt-0.5">
-                    PNG, JPG — la capture reste visible pour vous aider à remplir les champs
-                  </div>
-                </div>
-              </div>
-            ) : showScreenshot ? (
-              /* Screenshot preview */
-              <div className="relative rounded-xl overflow-hidden border border-ink-100 bg-ink-50">
-                <img
-                  src={screenshotUrl}
-                  alt="Capture de référence"
-                  className="w-full max-h-56 object-contain"
-                />
-                <button
-                  type="button"
-                  onClick={() => { setScreenshotUrl(null); setScreenshot(null); }}
-                  className="absolute top-2 right-2 bg-ink-900/60 hover:bg-ink-900/80 text-white rounded-lg p-1 transition-colors"
-                >
-                  <Icon name="x" size={14} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-[12px] text-ink-500">
-                <Icon name="check-circle-2" size={14} className="text-success-500" />
-                Capture chargée — cliquez sur &laquo; Afficher &raquo; pour la revoir
-              </div>
-            )}
-            <input
-              ref={screenshotRef}
-              type="file"
-              accept="image/*"
-              onChange={handleScreenshotChange}
-              className="hidden"
-            />
-          </div>
-
-          {/* ── Items list ── */}
-          <div className="px-6 py-4 space-y-3 flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[12px] font-semibold text-ink-700 uppercase tracking-wide">
-                Articles à importer
+              <span className="text-[11px] text-ink-400">
+                {validCount} valide{validCount > 1 ? 's' : ''}
               </span>
-              <span className="text-[11px] text-ink-400">{validCount} valide{validCount > 1 ? 's' : ''}</span>
             </div>
 
             {entries.map((entry, idx) => (
@@ -221,14 +123,14 @@ export default function ImportModal({ open, onClose, onImport }) {
             <button
               type="button"
               onClick={addEntry}
-              className="w-full border-2 border-dashed border-ink-200 hover:border-brand-400 hover:bg-brand-50/20 rounded-xl py-3 flex items-center justify-center gap-2 text-[13px] font-medium text-ink-500 hover:text-brand-600 transition-colors"
+              className="w-full border-2 border-dashed border-ink-200 hover:border-brand-300 hover:bg-brand-50/30 rounded-xl py-3 flex items-center justify-center gap-2 text-[13px] font-medium text-ink-500 hover:text-brand-600 transition-colors"
             >
-              <Icon name="plus" size={16} />
+              <Icon name="plus" size={15} />
               Ajouter un article
             </button>
           </div>
 
-          {/* ── Footer ── */}
+          {/* Footer */}
           <div className="px-6 py-4 border-t border-ink-100 flex items-center justify-end gap-3 shrink-0 bg-white">
             <button
               type="button"
@@ -255,14 +157,13 @@ export default function ImportModal({ open, onClose, onImport }) {
 /* ── Single entry card ── */
 function EntryCard({ entry, index, onChange, onImageChange, onRemove }) {
   const fileRef = useRef(null);
+  const INPUT = 'w-full border border-ink-200 rounded-lg px-2.5 py-1.5 text-[13px] bg-white focus-ring transition-all';
 
   const handleFile = async (e) => {
     const file = e.target.files[0];
     if (file) onImageChange(file);
     e.target.value = '';
   };
-
-  const INPUT_SM = 'w-full border border-ink-200 rounded-lg px-2.5 py-1.5 text-[13px] bg-white focus-ring transition-all';
 
   return (
     <div className="border border-ink-100 rounded-xl p-3 bg-ink-50/30 hover:bg-white hover:border-ink-200 transition-colors">
@@ -290,7 +191,7 @@ function EntryCard({ entry, index, onChange, onImageChange, onRemove }) {
         <div className="flex-1 grid grid-cols-2 gap-2 min-w-0">
           <div className="col-span-2">
             <input
-              className={INPUT_SM + ' font-medium'}
+              className={INPUT + ' font-medium'}
               placeholder={`Article ${index + 1} — Nom du produit *`}
               value={entry.name}
               onChange={(e) => onChange('name', e.target.value)}
@@ -298,7 +199,7 @@ function EntryCard({ entry, index, onChange, onImageChange, onRemove }) {
           </div>
 
           <select
-            className={INPUT_SM}
+            className={INPUT}
             value={entry.category}
             onChange={(e) => onChange('category', e.target.value)}
           >
@@ -306,25 +207,23 @@ function EntryCard({ entry, index, onChange, onImageChange, onRemove }) {
           </select>
 
           <input
-            className={INPUT_SM}
+            className={INPUT}
             placeholder="Marque"
             value={entry.brand}
             onChange={(e) => onChange('brand', e.target.value)}
           />
 
           <input
-            type="number"
-            step="0.5"
-            className={INPUT_SM + ' num'}
+            type="number" step="0.5"
+            className={INPUT + ' num'}
             placeholder="Prix achat €"
             value={entry.purchasePrice}
             onChange={(e) => onChange('purchasePrice', e.target.value)}
           />
 
           <input
-            type="number"
-            step="0.5"
-            className={INPUT_SM + ' num'}
+            type="number" step="0.5"
+            className={INPUT + ' num'}
             placeholder="Prix mise en ligne €"
             value={entry.listedPrice}
             onChange={(e) => onChange('listedPrice', e.target.value)}

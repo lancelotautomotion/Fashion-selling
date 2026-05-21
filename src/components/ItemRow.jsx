@@ -110,7 +110,7 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdat
             <div className={'text-[14px] font-semibold num ' + (marginPositive ? 'text-success-600' : 'text-danger-600')}>
               {marginPositive ? '+' : ''}{fmtEUR(margin)}
             </div>
-            <div className="text-[11px] text-ink-500 num font-medium">
+            <div className="text-[11px] num font-medium text-success-600">
               {days} jour{days > 1 ? 's' : ''} de vente
             </div>
           </div>
