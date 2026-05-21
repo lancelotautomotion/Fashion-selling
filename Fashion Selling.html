@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fashion Selling — Tableau de bord</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50:  '#eefcfb',
+            100: '#d4f7f4',
+            200: '#abeee9',
+            300: '#74dfd9',
+            400: '#3cc7c2',
+            500: '#1faaa6',
+            600: '#168a88',
+            700: '#136f6e',
+            800: '#125858',
+            900: '#114a4a',
+          },
+          ink: {
+            50:  '#f7f7f6',
+            100: '#eeeeec',
+            200: '#dededb',
+            300: '#bdbdb8',
+            400: '#8b8b85',
+            500: '#5d5d57',
+            600: '#3f3f3a',
+            700: '#2a2a26',
+            800: '#1c1c19',
+            900: '#0f0f0d',
+          },
+          page: '#f5f5f3',
+          success: {
+            50:  '#ecfdf3',
+            100: '#d1fadf',
+            500: '#16a34a',
+            600: '#15803d',
+            700: '#166534',
+          },
+          danger: {
+            50:  '#fef2f2',
+            500: '#dc2626',
+            600: '#b91c1c',
+          },
+        },
+        fontFamily: {
+          sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        },
+        boxShadow: {
+          card: '0 1px 0 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.04)',
+          float: '0 8px 32px -8px rgb(15 15 13 / 0.18), 0 2px 6px rgb(15 15 13 / 0.06)',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html, body { background: #f5f5f3; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; color: #1c1c19; -webkit-font-smoothing: antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  .row-sold td { background-color: #fafaf9; }
+  .row-sold .row-text { color: #5d5d57; }
+  /* Toggle */
+  .toggle { position: relative; width: 36px; height: 20px; border-radius: 999px; background: #dedede; transition: background .15s ease; cursor: pointer; flex-shrink: 0; }
+  .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; box-shadow: 0 1px 2px rgb(0 0 0 / 0.15); transition: transform .15s ease; }
+  .toggle.on { background: #16a34a; }
+  .toggle.on::after { transform: translateX(16px); }
+  /* Subtle striped placeholder for product thumbs */
+  .thumb-stripe { background-image: repeating-linear-gradient(45deg, #eeeeec 0 6px, #f7f7f6 6px 12px); }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #dededb; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #bdbdb8; }
+  /* Focus rings on brand */
+  input:focus, select:focus, button:focus { outline: none; }
+  .focus-ring:focus { box-shadow: 0 0 0 3px rgb(31 170 166 / 0.25); border-color: #1faaa6; }
+  /* Pretty wrap */
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  /* Slide in modal */
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+  .anim-fade { animation: fadeIn .15s ease-out; }
+  .anim-slide { animation: slideUp .2s ease-out; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="env,react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+/* -------------------- Icon helper -------------------- */
+function Icon({ name, size = 16, className = "", strokeWidth = 2 }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) {
+      ref.current.innerHTML = '';
+      const svg = window.lucide.createElement(window.lucide.icons[toPascal(name)] || window.lucide.icons.Circle);
+      svg.setAttribute('width', size);
+      svg.setAttribute('height', size);
+      svg.setAttribute('stroke-width', strokeWidth);
+      ref.current.appendChild(svg);
+    }
+  }, [name, size, strokeWidth]);
+  return <span ref={ref} className={"inline-flex items-center justify-center " + className} />;
+}
+function toPascal(s) {
+  return s.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join('');
+}
+
+/* -------------------- Mock data -------------------- */
+const today = new Date('2026-05-21');
+const d = (iso) => new Date(iso);
+const fmtDate = (date) => date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' });
+const fmtEUR = (n) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(n);
+const daysBetween = (a, b) => Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24)));
+
+const initialItems = [
+  {
+    id: 1,
+    name: "Trench beige ceinturé",
+    category: "Manteaux & Vestes",
+    brand: "Maje",
+    purchaseDate: "2026-02-12",
+    purchasePrice: 18,
+    listedDate: "2026-02-20",
+    listedPrice: 65,
+    sold: true,
+    soldDate: "2026-03-04",
+    salePrice: 58,
+  },
+  {
+    id: 2,
+    name: "Jean droit taille haute",
+    category: "Pantalons & Jeans",
+    brand: "Levi's",
+    purchaseDate: "2026-03-01",
+    purchasePrice: 9,
+    listedDate: "2026-03-08",
+    listedPrice: 32,
+    sold: true,
+    soldDate: "2026-03-15",
+    salePrice: 30,
+  },
+  {
+    id: 3,
+    name: "Pull col rond laine mérinos",
+    category: "Pulls & Gilets",
+    brand: "Uniqlo",
+    purchaseDate: "2026-04-10",
+    purchasePrice: 6,
+    listedDate: "2026-04-14",
+    listedPrice: 22,
+    sold: false,
+    soldDate: null,
+    salePrice: null,
+  },
+  {
+    id: 4,
+    name: "Robe midi imprimée",
+    category: "Robes",
+    brand: "Sézane",
+    purchaseDate: "2026-04-22",
+    purchasePrice: 22,
+    listedDate: "2026-04-30",
+    listedPrice: 78,
+    sold: false,
+    soldDate: null,
+    salePrice: null,
+  },
+  {
+    id: 5,
+    name: "Sneakers basses cuir",
+    category: "Chaussures",
+    brand: "Veja",
+    purchaseDate: "2026-03-18",
+    purchasePrice: 28,
+    listedDate: "2026-03-25",
+    listedPrice: 70,
+    sold: true,
+    soldDate: "2026-04-02",
+    salePrice: 68,
+  },
+  {
+    id: 6,
+    name: "Sac bandoulière toile",
+    category: "Sacs & Accessoires",
+    brand: "Polène",
+    purchaseDate: "2026-05-02",
+    purchasePrice: 35,
+    listedDate: "2026-05-08",
+    listedPrice: 145,
+    sold: false,
+    soldDate: null,
+    salePrice: null,
+  },
+];
+
+const CATEGORIES = [
+  "Manteaux & Vestes", "Pantalons & Jeans", "Pulls & Gilets",
+  "Robes", "Chaussures", "Sacs & Accessoires", "T-shirts & Tops", "Jupes",
+];
+
+/* -------------------- KPI Cards -------------------- */
+function StatCard({ label, value, sub, icon, tone = "brand" }) {
+  const toneMap = {
+    brand: "bg-brand-50 text-brand-700",
+    success: "bg-success-50 text-success-700",
+    ink: "bg-ink-100 text-ink-700",
+    warm: "bg-amber-50 text-amber-700",
+  };
+  return (
+    <div className="bg-white rounded-2xl border border-ink-100 p-5 shadow-card flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[13px] font-medium text-ink-500 tracking-wide">{label}</span>
+        <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${toneMap[tone]}`}>
+          <Icon name={icon} size={18} />
+        </span>
+      </div>
+      <div className="num text-[28px] leading-none font-semibold text-ink-900 tracking-tight">{value}</div>
+      {sub && <div className="text-[12px] text-ink-400 num">{sub}</div>}
+    </div>
+  );
+}
+
+/* -------------------- Status badges -------------------- */
+function StatusBadge({ sold }) {
+  if (sold) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success-50 text-success-700 text-[11px] font-medium border border-success-100">
+        <span className="w-1.5 h-1.5 rounded-full bg-success-500"></span>
+        Vendu
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 text-[11px] font-medium border border-brand-100">
+      <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span>
+      En vente
+    </span>
+  );
+}
+
+/* -------------------- Editable price -------------------- */
+function EditablePrice({ value, onChange, disabled }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  useEffect(() => { setDraft(value); }, [value]);
+
+  if (disabled) return <span className="text-ink-300">—</span>;
+
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-1 bg-white border border-brand-400 rounded-md px-1.5 py-0.5 shadow-sm">
+        <input
+          type="number"
+          step="0.5"
+          value={draft}
+          autoFocus
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => { setEditing(false); onChange(parseFloat(draft) || 0); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { setEditing(false); onChange(parseFloat(draft) || 0); }
+            if (e.key === 'Escape') { setEditing(false); setDraft(value); }
+          }}
+          className="w-16 text-right num text-sm bg-transparent focus:outline-none"
+        />
+        <span className="text-ink-400 text-xs">€</span>
+      </span>
+    );
+  }
+  return (
+    <button
+      onClick={() => setEditing(true)}
+      className="num text-sm text-ink-900 font-medium hover:bg-brand-50 hover:text-brand-700 rounded-md px-1.5 py-0.5 transition-colors inline-flex items-center gap-1 group"
+    >
+      {fmtEUR(value)}
+      <Icon name="pencil" size={11} className="opacity-0 group-hover:opacity-60 transition-opacity" />
+    </button>
+  );
+}
+
+/* -------------------- Toggle -------------------- */
+function Toggle({ on, onChange }) {
+  return (
+    <button
+      onClick={() => onChange(!on)}
+      className={"toggle" + (on ? " on" : "")}
+      aria-label="Marquer comme vendu"
+      role="switch"
+      aria-checked={on}
+    />
+  );
+}
+
+/* -------------------- Row -------------------- */
+function ItemRow({ item, onToggleSold, onUpdateSalePrice, onDelete }) {
+  const purchase = d(item.purchaseDate);
+  const listed = d(item.listedDate);
+  const sold = item.sold ? d(item.soldDate) : null;
+
+  const margin = item.sold ? (item.salePrice - item.purchasePrice) : null;
+  const days = item.sold ? daysBetween(listed, sold) : null;
+  const marginPositive = margin !== null && margin >= 0;
+
+  return (
+    <tr className={"border-b border-ink-100 last:border-b-0 transition-colors " + (item.sold ? "row-sold" : "hover:bg-ink-50/40")}>
+      {/* Statut toggle */}
+      <td className="py-4 px-3">
+        <div className="flex items-center gap-2.5">
+          <Toggle on={item.sold} onChange={(v) => onToggleSold(item.id, v)} />
+          <StatusBadge sold={item.sold} />
+        </div>
+      </td>
+
+      {/* Produit & Catégorie */}
+      <td className="py-4 px-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg thumb-stripe border border-ink-100 shrink-0"></div>
+          <div className="min-w-0">
+            <div className={"text-[14px] font-medium truncate row-text " + (item.sold ? "" : "text-ink-900")}>{item.name}</div>
+            <div className="text-[12px] text-ink-400 truncate">{item.category}</div>
+          </div>
+        </div>
+      </td>
+
+      {/* Marque */}
+      <td className="py-4 px-3">
+        <span className="text-[13px] text-ink-700 row-text">{item.brand}</span>
+      </td>
+
+      {/* Achat */}
+      <td className="py-4 px-3">
+        <div className="text-[13px] text-ink-700 row-text num">{fmtEUR(item.purchasePrice)}</div>
+        <div className="text-[11px] text-ink-400 num">{fmtDate(purchase)}</div>
+      </td>
+
+      {/* Mise en ligne */}
+      <td className="py-4 px-3">
+        <div className="text-[13px] text-ink-700 row-text num">{fmtEUR(item.listedPrice)}</div>
+        <div className="text-[11px] text-ink-400 num">{fmtDate(listed)}</div>
+      </td>
+
+      {/* Vente */}
+      <td className="py-4 px-3">
+        {item.sold ? (
+          <div>
+            <EditablePrice
+              value={item.salePrice}
+              onChange={(v) => onUpdateSalePrice(item.id, v)}
+            />
+            <div className="text-[11px] text-ink-400 num mt-0.5">{fmtDate(sold)}</div>
+          </div>
+        ) : (
+          <span className="text-ink-300">—</span>
+        )}
+      </td>
+
+      {/* Performances */}
+      <td className="py-4 px-3">
+        {item.sold ? (
+          <div className="flex flex-col gap-0.5">
+            <div className={"text-[14px] font-semibold num " + (marginPositive ? "text-success-600" : "text-danger-600")}>
+              {marginPositive ? "+" : ""}{fmtEUR(margin)}
+            </div>
+            <div className="text-[11px] text-ink-500 num font-medium">
+              {days} jour{days > 1 ? "s" : ""} de vente
+            </div>
+          </div>
+        ) : (
+          <span className="text-ink-300">—</span>
+        )}
+      </td>
+
+      {/* Actions */}
+      <td className="py-4 px-3 text-right">
+        <button
+          onClick={() => onDelete(item.id)}
+          className="text-ink-400 hover:text-danger-600 hover:bg-danger-50 rounded-lg p-1.5 transition-colors"
+          title="Supprimer"
+        >
+          <Icon name="trash-2" size={15} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+/* -------------------- Add Item Modal -------------------- */
+function AddItemModal({ open, onClose, onAdd }) {
+  const [form, setForm] = useState({
+    name: "", category: CATEGORIES[0], brand: "",
+    purchaseDate: "2026-05-21", purchasePrice: "",
+    listedDate: "2026-05-21", listedPrice: "",
+  });
+
+  useEffect(() => {
+    if (open) setForm({
+      name: "", category: CATEGORIES[0], brand: "",
+      purchaseDate: "2026-05-21", purchasePrice: "",
+      listedDate: "2026-05-21", listedPrice: "",
+    });
+  }, [open]);
+
+  if (!open) return null;
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!form.name || !form.brand) return;
+    onAdd({
+      ...form,
+      purchasePrice: parseFloat(form.purchasePrice) || 0,
+      listedPrice: parseFloat(form.listedPrice) || 0,
+      sold: false, soldDate: null, salePrice: null,
+    });
+    onClose();
+  };
+
+  const Field = ({ label, children }) => (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[12px] font-medium text-ink-600">{label}</span>
+      {children}
+    </label>
+  );
+
+  const inputCls = "w-full border border-ink-200 rounded-lg px-3 py-2 text-sm bg-white focus-ring transition-all";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 anim-fade p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-float w-full max-w-xl anim-slide" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
+              <Icon name="plus" size={18} />
+            </div>
+            <div>
+              <h2 className="text-[16px] font-semibold text-ink-900">Ajouter un article</h2>
+              <p className="text-[12px] text-ink-400">Renseignez les informations d'achat et de mise en ligne</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-700 p-1 rounded-lg">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="p-6 grid grid-cols-2 gap-4">
+          <div className="col-span-2">
+            <Field label="Nom du produit">
+              <input className={inputCls} placeholder="ex. Veste en jean oversize" value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required />
+            </Field>
+          </div>
+          <Field label="Catégorie">
+            <select className={inputCls} value={form.category} onChange={(e) => setForm({...form, category: e.target.value})}>
+              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Marque">
+            <input className={inputCls} placeholder="ex. Sandro" value={form.brand} onChange={(e) => setForm({...form, brand: e.target.value})} required />
+          </Field>
+          <Field label="Date d'achat">
+            <input type="date" className={inputCls} value={form.purchaseDate} onChange={(e) => setForm({...form, purchaseDate: e.target.value})} />
+          </Field>
+          <Field label="Prix d'achat (€)">
+            <input type="number" step="0.5" className={inputCls + " num"} placeholder="0,00" value={form.purchasePrice} onChange={(e) => setForm({...form, purchasePrice: e.target.value})} />
+          </Field>
+          <Field label="Date de mise en ligne">
+            <input type="date" className={inputCls} value={form.listedDate} onChange={(e) => setForm({...form, listedDate: e.target.value})} />
+          </Field>
+          <Field label="Prix de mise en ligne (€)">
+            <input type="number" step="0.5" className={inputCls + " num"} placeholder="0,00" value={form.listedPrice} onChange={(e) => setForm({...form, listedPrice: e.target.value})} />
+          </Field>
+
+          <div className="col-span-2 flex items-center justify-end gap-3 pt-4 border-t border-ink-100 mt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-ink-600 hover:bg-ink-100 rounded-lg transition-colors">Annuler</button>
+            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors shadow-sm">
+              Ajouter l'article
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------- Import Modal -------------------- */
+function ImportModal({ open, onClose, onImport }) {
+  const [stage, setStage] = useState('drop'); // drop, scanning, review
+  const [extracted, setExtracted] = useState(null);
+
+  useEffect(() => {
+    if (open) { setStage('drop'); setExtracted(null); }
+  }, [open]);
+
+  if (!open) return null;
+
+  const simulateScan = () => {
+    setStage('scanning');
+    setTimeout(() => {
+      setExtracted({
+        name: "Blazer croisé laine",
+        category: "Manteaux & Vestes",
+        brand: "Zara",
+        listedPrice: 45,
+        confidence: 0.92,
+      });
+      setStage('review');
+    }, 1800);
+  };
+
+  const confirm = () => {
+    onImport({
+      ...extracted,
+      purchaseDate: "2026-05-15",
+      purchasePrice: 12,
+      listedDate: "2026-05-21",
+      sold: false, soldDate: null, salePrice: null,
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 anim-fade p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-float w-full max-w-lg anim-slide" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
+              <Icon name="camera" size={18} />
+            </div>
+            <div>
+              <h2 className="text-[16px] font-semibold text-ink-900">Importer une capture d'écran</h2>
+              <p className="text-[12px] text-ink-400">Détection automatique des champs</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-700 p-1 rounded-lg">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {stage === 'drop' && (
+            <button
+              onClick={simulateScan}
+              className="w-full border-2 border-dashed border-ink-200 hover:border-brand-400 hover:bg-brand-50/30 rounded-xl p-10 flex flex-col items-center gap-3 transition-colors"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                <Icon name="upload-cloud" size={22} />
+              </div>
+              <div className="text-center">
+                <div className="text-sm font-medium text-ink-900">Glissez une capture ici</div>
+                <div className="text-[12px] text-ink-400 mt-1">PNG, JPG — ou cliquez pour parcourir</div>
+              </div>
+              <div className="text-[11px] text-brand-600 font-medium mt-2 underline-offset-2 hover:underline">
+                Simuler une capture de démonstration
+              </div>
+            </button>
+          )}
+
+          {stage === 'scanning' && (
+            <div className="py-10 flex flex-col items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center animate-pulse">
+                <Icon name="scan-line" size={22} />
+              </div>
+              <div className="text-sm font-medium text-ink-900">Analyse de l'image…</div>
+              <div className="w-full max-w-xs bg-ink-100 rounded-full h-1.5 overflow-hidden">
+                <div className="h-full bg-brand-500 rounded-full animate-pulse" style={{ width: '70%' }}></div>
+              </div>
+              <div className="text-[12px] text-ink-400">Détection de la marque, du prix et de la catégorie</div>
+            </div>
+          )}
+
+          {stage === 'review' && extracted && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-success-700 bg-success-50 border border-success-100 rounded-lg px-3 py-2 text-[13px]">
+                <Icon name="check-circle-2" size={16} />
+                <span className="font-medium">Champs détectés</span>
+                <span className="ml-auto num text-success-600">{Math.round(extracted.confidence * 100)}% de confiance</span>
+              </div>
+
+              <div className="border border-ink-100 rounded-xl divide-y divide-ink-100">
+                {[
+                  ['Produit', extracted.name],
+                  ['Catégorie', extracted.category],
+                  ['Marque', extracted.brand],
+                  ['Prix de mise en ligne', fmtEUR(extracted.listedPrice)],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-[12px] text-ink-500">{k}</span>
+                    <span className="text-[13px] font-medium text-ink-900">{v}</span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[12px] text-ink-400">Vous pourrez compléter les informations d'achat après l'import.</p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-ink-600 hover:bg-ink-100 rounded-lg transition-colors">Annuler</button>
+                <button onClick={confirm} className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors shadow-sm inline-flex items-center gap-1.5">
+                  <Icon name="check" size={15} />
+                  Confirmer l'import
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------- App -------------------- */
+function App() {
+  const [items, setItems] = useState(initialItems);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all"); // all | listed | sold
+  const [showAdd, setShowAdd] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+
+  /* --------- Filtering --------- */
+  const filtered = useMemo(() => {
+    return items.filter(it => {
+      if (filter === 'listed' && it.sold) return false;
+      if (filter === 'sold' && !it.sold) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        return it.name.toLowerCase().includes(q) || it.brand.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [items, search, filter]);
+
+  /* --------- KPIs --------- */
+  const kpis = useMemo(() => {
+    const stock = items.filter(i => !i.sold).length;
+    const soldItems = items.filter(i => i.sold);
+    const revenue = soldItems.reduce((s, i) => s + i.salePrice, 0);
+    const margin = soldItems.reduce((s, i) => s + (i.salePrice - i.purchasePrice), 0);
+    const avgDays = soldItems.length
+      ? Math.round(soldItems.reduce((s, i) => s + daysBetween(d(i.listedDate), d(i.soldDate)), 0) / soldItems.length)
+      : 0;
+    return { stock, revenue, margin, avgDays, soldCount: soldItems.length };
+  }, [items]);
+
+  /* --------- Handlers --------- */
+  const handleToggleSold = (id, v) => {
+    setItems(items.map(it => it.id === id
+      ? {
+          ...it,
+          sold: v,
+          soldDate: v ? (it.soldDate || '2026-05-21') : null,
+          salePrice: v ? (it.salePrice ?? it.listedPrice) : null,
+        }
+      : it
+    ));
+  };
+  const handleUpdateSalePrice = (id, price) => {
+    setItems(items.map(it => it.id === id ? { ...it, salePrice: price } : it));
+  };
+  const handleDelete = (id) => {
+    setItems(items.filter(it => it.id !== id));
+  };
+  const handleAdd = (item) => {
+    setItems([{ ...item, id: Math.max(0, ...items.map(i => i.id)) + 1 }, ...items]);
+  };
+
+  const filterCounts = {
+    all: items.length,
+    listed: items.filter(i => !i.sold).length,
+    sold: items.filter(i => i.sold).length,
+  };
+
+  return (
+    <div className="min-h-screen">
+      {/* ----------- Top nav ----------- */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-ink-100 sticky top-0 z-30">
+        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-ink-900 text-white flex items-center justify-center font-semibold tracking-tight">
+              FS
+            </div>
+            <div>
+              <div className="text-[15px] font-semibold text-ink-900 leading-none">Fashion Selling</div>
+              <div className="text-[11px] text-ink-400 mt-1">Tableau de bord revente</div>
+            </div>
+          </div>
+
+          <nav className="hidden md:flex items-center gap-1 text-[13px]">
+            {['Tableau de bord', 'Statistiques', 'Catalogue', 'Paramètres'].map((l, i) => (
+              <a key={l} href="#" className={"px-3 py-1.5 rounded-lg transition-colors " + (i === 0 ? "bg-ink-100 text-ink-900 font-medium" : "text-ink-500 hover:text-ink-900 hover:bg-ink-50")}>
+                {l}
+              </a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button className="text-ink-500 hover:text-ink-900 hover:bg-ink-50 rounded-lg p-2 transition-colors relative">
+              <Icon name="bell" size={17} />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+            </button>
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-white flex items-center justify-center text-[12px] font-semibold">
+              CL
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ----------- Page ----------- */}
+      <main className="max-w-[1400px] mx-auto px-6 lg:px-10 py-8">
+
+        {/* Title */}
+        <div className="flex items-end justify-between flex-wrap gap-4 mb-6">
+          <div>
+            <h1 className="text-[26px] font-semibold text-ink-900 tracking-tight">Bonjour Camille 👋</h1>
+            <p className="text-[14px] text-ink-500 mt-1">Voici un aperçu de votre activité de revente ce mois-ci.</p>
+          </div>
+          <div className="flex items-center gap-2 text-[12px] text-ink-400">
+            <Icon name="calendar" size={14} />
+            <span className="num">21 mai 2026</span>
+          </div>
+        </div>
+
+        {/* KPIs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            label="Articles en stock"
+            value={kpis.stock}
+            sub={`${kpis.soldCount} déjà vendus`}
+            icon="package"
+            tone="brand"
+          />
+          <StatCard
+            label="Total des ventes"
+            value={fmtEUR(kpis.revenue)}
+            sub="Chiffre d'affaires cumulé"
+            icon="trending-up"
+            tone="brand"
+          />
+          <StatCard
+            label="Marge nette totale"
+            value={fmtEUR(kpis.margin)}
+            sub={`+${((kpis.margin / Math.max(1, kpis.revenue)) * 100).toFixed(0)}% de rentabilité`}
+            icon="coins"
+            tone="success"
+          />
+          <StatCard
+            label="Temps de vente moyen"
+            value={`${kpis.avgDays} j`}
+            sub="Entre mise en ligne et vente"
+            icon="clock"
+            tone="ink"
+          />
+        </div>
+
+        {/* Action bar + table card */}
+        <div className="bg-white rounded-2xl border border-ink-100 shadow-card overflow-hidden">
+          {/* Action bar */}
+          <div className="px-5 py-4 border-b border-ink-100 flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[240px] max-w-md">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
+                <Icon name="search" size={16} />
+              </span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher par nom ou marque…"
+                className="w-full pl-9 pr-3 py-2 border border-ink-200 rounded-lg text-sm bg-ink-50/50 focus-ring transition-all placeholder:text-ink-400"
+              />
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex items-center bg-ink-100 rounded-lg p-0.5">
+              {[
+                { id: 'all', label: 'Tous' },
+                { id: 'listed', label: 'En vente' },
+                { id: 'sold', label: 'Vendus' },
+              ].map(f => (
+                <button
+                  key={f.id}
+                  onClick={() => setFilter(f.id)}
+                  className={"px-3 py-1.5 text-[13px] font-medium rounded-md transition-all flex items-center gap-1.5 " + (filter === f.id ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700")}
+                >
+                  {f.label}
+                  <span className={"num text-[11px] px-1.5 py-0.5 rounded-full " + (filter === f.id ? "bg-brand-50 text-brand-700" : "bg-white/60 text-ink-400")}>
+                    {filterCounts[f.id]}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex-1"></div>
+
+            {/* Import */}
+            <button
+              onClick={() => setShowImport(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium text-ink-700 bg-white border border-ink-200 hover:border-ink-300 hover:bg-ink-50 rounded-lg transition-colors"
+            >
+              <Icon name="camera" size={15} />
+              Importer capture
+            </button>
+
+            {/* Add */}
+            <button
+              onClick={() => setShowAdd(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors shadow-sm"
+            >
+              <Icon name="plus" size={15} />
+              Ajouter un article
+            </button>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-ink-100 bg-ink-50/40">
+                  <th className="py-2.5 px-3 text-left text-[11px] font-medium text-ink-500 uppercase tracking-wider">Statut</th>
+                  <th className="py-2.5 px-3 text-left text-[11px] font-medium text-ink-500 uppercase tracking-wider">Produit</th>
+                  <th className="py-2.5 px-3 text-left text-[11px] font-medium text-ink-500 uppercase tracking-wider">Marque</th>
+                  <th className="py-2.5 px-3 text-left text-[11px] font-medium text-ink-500 uppercase tracking-wider">Achat</th>
+                  <th className="py-2.5 px-3 text-left text-[11px] font-medium text-ink-500 uppercase tracking-wider">Mise en ligne</th>
+                  <th className="py-2.5 px-3 text-left text-[11px] font-medium text-ink-500 uppercase tracking-wider">Vente</th>
+                  <th className="py-2.5 px-3 text-left text-[11px] font-medium text-ink-500 uppercase tracking-wider">Performances</th>
+                  <th className="py-2.5 px-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-16 text-center">
+                      <div className="flex flex-col items-center gap-2 text-ink-400">
+                        <Icon name="package-search" size={28} />
+                        <div className="text-sm font-medium text-ink-500">Aucun article trouvé</div>
+                        <div className="text-[12px]">Essayez de modifier vos filtres ou votre recherche.</div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map(item => (
+                    <ItemRow
+                      key={item.id}
+                      item={item}
+                      onToggleSold={handleToggleSold}
+                      onUpdateSalePrice={handleUpdateSalePrice}
+                      onDelete={handleDelete}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 py-3 border-t border-ink-100 flex items-center justify-between text-[12px] text-ink-400">
+            <span>{filtered.length} article{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="info" size={12} />
+              Astuce : cliquez sur un prix de vente pour le modifier
+            </span>
+          </div>
+        </div>
+
+      </main>
+
+      <AddItemModal open={showAdd} onClose={() => setShowAdd(false)} onAdd={handleAdd} />
+      <ImportModal open={showImport} onClose={() => setShowImport(false)} onImport={handleAdd} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
