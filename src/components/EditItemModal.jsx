@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Icon from './Icon.jsx';
+import Toggle from './Toggle.jsx';
 import { CATEGORIES } from '../data/initialData.js';
 import { resizeImageFile } from '../utils/imageUtils.js';
 
@@ -15,22 +16,19 @@ function Field({ label, children }) {
   );
 }
 
-const EMPTY = {
-  name: '', category: CATEGORIES[0], brand: '',
-  purchaseDate: TODAY, purchasePrice: '',
-  listedDate: TODAY, listedPrice: '',
-};
-
-export default function AddItemModal({ open, onClose, onAdd }) {
-  const [form, setForm] = useState(EMPTY);
+export default function EditItemModal({ open, onClose, item, onSave }) {
+  const [form, setForm] = useState(null);
   const [image, setImage] = useState(null);
   const fileRef = useRef(null);
 
   useEffect(() => {
-    if (open) { setForm({ ...EMPTY, purchaseDate: TODAY, listedDate: TODAY }); setImage(null); }
-  }, [open]);
+    if (open && item) {
+      setForm({ ...item });
+      setImage(item.image ?? null);
+    }
+  }, [open, item]);
 
-  if (!open) return null;
+  if (!open || !form) return null;
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -42,15 +40,20 @@ export default function AddItemModal({ open, onClose, onAdd }) {
     e.target.value = '';
   };
 
+  const handleSoldToggle = (v) => {
+    set('sold', v);
+    if (v && !form.soldDate) set('soldDate', TODAY);
+    if (!v) { set('soldDate', null); set('salePrice', null); }
+  };
+
   const submit = (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    onAdd({
+    onSave({
       ...form,
-      image,
       purchasePrice: parseFloat(form.purchasePrice) || 0,
       listedPrice:   parseFloat(form.listedPrice)   || 0,
-      sold: false, soldDate: null, salePrice: null,
+      salePrice:     form.sold ? (parseFloat(form.salePrice) || 0) : null,
+      image,
     });
     onClose();
   };
@@ -61,18 +64,18 @@ export default function AddItemModal({ open, onClose, onAdd }) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-float w-full max-w-xl anim-slide"
+        className="bg-white rounded-2xl shadow-float w-full max-w-xl anim-slide max-h-[92vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-ink-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center">
-              <Icon name="plus" size={18} />
+              <Icon name="pencil" size={16} />
             </div>
             <div>
-              <h2 className="text-[16px] font-semibold text-ink-900">Ajouter un article</h2>
-              <p className="text-[12px] text-ink-400">Renseignez les informations d'achat et de mise en ligne</p>
+              <h2 className="text-[16px] font-semibold text-ink-900">Modifier l'article</h2>
+              <p className="text-[12px] text-ink-400">Tous les champs sont modifiables</p>
             </div>
           </div>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-700 p-1 rounded-lg">
@@ -80,8 +83,8 @@ export default function AddItemModal({ open, onClose, onAdd }) {
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={submit} className="p-6 grid grid-cols-2 gap-4">
+        {/* Scrollable form */}
+        <form onSubmit={submit} className="overflow-y-auto flex-1 p-6 grid grid-cols-2 gap-4">
 
           {/* Photo */}
           <div className="col-span-2">
@@ -102,27 +105,31 @@ export default function AddItemModal({ open, onClose, onAdd }) {
                 </div>
               </div>
               <input ref={fileRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="text-[12px] font-medium text-brand-600 hover:text-brand-700 hover:underline"
-              >
-                {image ? 'Changer la photo' : 'Ajouter une photo'}
-              </button>
-              {image && (
-                <button type="button" onClick={() => setImage(null)}
-                  className="text-[12px] text-danger-500 hover:underline">
-                  Supprimer
+              <div className="flex flex-col gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="text-[12px] font-medium text-brand-600 hover:text-brand-700 hover:underline text-left"
+                >
+                  {image ? 'Changer la photo' : 'Ajouter une photo'}
                 </button>
-              )}
+                {image && (
+                  <button
+                    type="button"
+                    onClick={() => setImage(null)}
+                    className="text-[12px] text-danger-500 hover:text-danger-600 hover:underline text-left"
+                  >
+                    Supprimer la photo
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Name */}
           <div className="col-span-2">
             <Field label="Nom du produit">
-              <input className={INPUT} placeholder="ex. Veste en jean oversize"
-                value={form.name} onChange={(e) => set('name', e.target.value)} required />
+              <input className={INPUT} value={form.name} onChange={(e) => set('name', e.target.value)} required />
             </Field>
           </div>
 
@@ -133,8 +140,7 @@ export default function AddItemModal({ open, onClose, onAdd }) {
           </Field>
 
           <Field label="Marque">
-            <input className={INPUT} placeholder="ex. Sandro"
-              value={form.brand} onChange={(e) => set('brand', e.target.value)} />
+            <input className={INPUT} value={form.brand} onChange={(e) => set('brand', e.target.value)} />
           </Field>
 
           <Field label="Date d'achat">
@@ -143,8 +149,8 @@ export default function AddItemModal({ open, onClose, onAdd }) {
           </Field>
 
           <Field label="Prix d'achat (€)">
-            <input type="number" step="0.5" className={INPUT + ' num'} placeholder="0,00"
-              value={form.purchasePrice} onChange={(e) => set('purchasePrice', e.target.value)} />
+            <input type="number" step="0.5" className={INPUT + ' num'} value={form.purchasePrice}
+              onChange={(e) => set('purchasePrice', e.target.value)} />
           </Field>
 
           <Field label="Date de mise en ligne">
@@ -153,10 +159,35 @@ export default function AddItemModal({ open, onClose, onAdd }) {
           </Field>
 
           <Field label="Prix de mise en ligne (€)">
-            <input type="number" step="0.5" className={INPUT + ' num'} placeholder="0,00"
-              value={form.listedPrice} onChange={(e) => set('listedPrice', e.target.value)} />
+            <input type="number" step="0.5" className={INPUT + ' num'} value={form.listedPrice}
+              onChange={(e) => set('listedPrice', e.target.value)} />
           </Field>
 
+          {/* Sold toggle */}
+          <div className="col-span-2 flex items-center justify-between p-3 rounded-xl bg-ink-50 border border-ink-100">
+            <div>
+              <div className="text-[13px] font-medium text-ink-800">Marquer comme vendu</div>
+              <div className="text-[11px] text-ink-400">Active les champs de vente</div>
+            </div>
+            <Toggle on={form.sold} onChange={handleSoldToggle} />
+          </div>
+
+          {/* Sold fields */}
+          {form.sold && (
+            <>
+              <Field label="Date de vente">
+                <input type="date" className={INPUT} value={form.soldDate || TODAY}
+                  onChange={(e) => set('soldDate', e.target.value)} />
+              </Field>
+              <Field label="Prix de vente (€)">
+                <input type="number" step="0.5" className={INPUT + ' num'}
+                  value={form.salePrice ?? form.listedPrice}
+                  onChange={(e) => set('salePrice', e.target.value)} />
+              </Field>
+            </>
+          )}
+
+          {/* Buttons */}
           <div className="col-span-2 flex items-center justify-end gap-3 pt-4 border-t border-ink-100 mt-2">
             <button type="button" onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-ink-600 hover:bg-ink-100 rounded-lg transition-colors">
@@ -164,7 +195,7 @@ export default function AddItemModal({ open, onClose, onAdd }) {
             </button>
             <button type="submit"
               className="px-4 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors shadow-sm">
-              Ajouter l'article
+              Enregistrer les modifications
             </button>
           </div>
         </form>

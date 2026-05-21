@@ -1,10 +1,14 @@
+import { useRef } from 'react';
 import Toggle from './Toggle.jsx';
 import StatusBadge from './StatusBadge.jsx';
 import EditablePrice from './EditablePrice.jsx';
 import Icon from './Icon.jsx';
 import { fmtDate, fmtEUR, daysBetween, parseDate } from '../utils/formatters.js';
+import { resizeImageFile } from '../utils/imageUtils.js';
 
-export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onDelete }) {
+export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdateImage, onEdit, onDelete }) {
+  const fileRef = useRef(null);
+
   const purchase = parseDate(item.purchaseDate);
   const listed   = parseDate(item.listedDate);
   const sold     = item.sold ? parseDate(item.soldDate) : null;
@@ -12,6 +16,14 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onDelet
   const margin = item.sold ? (item.salePrice - item.purchasePrice) : null;
   const days   = item.sold ? daysBetween(listed, sold) : null;
   const marginPositive = margin !== null && margin >= 0;
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const resized = await resizeImageFile(file);
+    onUpdateImage(item.id, resized);
+    e.target.value = '';
+  };
 
   return (
     <tr
@@ -31,7 +43,28 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onDelet
       {/* Product */}
       <td className="py-4 px-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg thumb-stripe border border-ink-100 shrink-0" />
+          {/* Clickable thumbnail */}
+          <div
+            className="relative w-10 h-10 rounded-lg shrink-0 cursor-pointer group overflow-hidden border border-ink-100"
+            onClick={() => fileRef.current?.click()}
+            title="Changer la photo"
+          >
+            {item.image
+              ? <img src={item.image} alt="" className="w-full h-full object-cover" />
+              : <div className="w-full h-full thumb-stripe" />
+            }
+            <div className="absolute inset-0 bg-ink-900/0 group-hover:bg-ink-900/35 transition-colors flex items-center justify-center">
+              <Icon name="camera" size={13} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+
           <div className="min-w-0">
             <div className={'text-[14px] font-medium truncate row-text ' + (item.sold ? '' : 'text-ink-900')}>
               {item.name}
@@ -62,10 +95,7 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onDelet
       <td className="py-4 px-3">
         {item.sold ? (
           <div>
-            <EditablePrice
-              value={item.salePrice}
-              onChange={(v) => onUpdateSalePrice(item.id, v)}
-            />
+            <EditablePrice value={item.salePrice} onChange={(v) => onUpdateSalePrice(item.id, v)} />
             <div className="text-[11px] text-ink-400 num mt-0.5">{fmtDate(sold)}</div>
           </div>
         ) : (
@@ -91,13 +121,22 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onDelet
 
       {/* Actions */}
       <td className="py-4 px-3 text-right">
-        <button
-          onClick={() => onDelete(item.id)}
-          className="text-ink-400 hover:text-danger-600 hover:bg-danger-50 rounded-lg p-1.5 transition-colors"
-          title="Supprimer"
-        >
-          <Icon name="trash-2" size={15} />
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={() => onEdit(item)}
+            className="text-ink-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg p-1.5 transition-colors"
+            title="Modifier"
+          >
+            <Icon name="pencil" size={15} />
+          </button>
+          <button
+            onClick={() => onDelete(item.id)}
+            className="text-ink-400 hover:text-danger-600 hover:bg-danger-50 rounded-lg p-1.5 transition-colors"
+            title="Supprimer"
+          >
+            <Icon name="trash-2" size={15} />
+          </button>
+        </div>
       </td>
     </tr>
   );

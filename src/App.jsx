@@ -5,6 +5,7 @@ import { fmtEUR, daysBetween, parseDate } from './utils/formatters.js';
 import StatCard from './components/StatCard.jsx';
 import ItemRow from './components/ItemRow.jsx';
 import AddItemModal from './components/AddItemModal.jsx';
+import EditItemModal from './components/EditItemModal.jsx';
 import ImportModal from './components/ImportModal.jsx';
 import Icon from './components/Icon.jsx';
 
@@ -14,6 +15,7 @@ export default function App() {
   const [filter, setFilter] = useState('all');
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   /* ── Filtering ── */
   const filtered = useMemo(() => {
@@ -58,6 +60,20 @@ export default function App() {
 
   const handleAdd = (item) =>
     setItems([{ ...item, id: Math.max(0, ...items.map((i) => i.id)) + 1 }, ...items]);
+
+  const handleEdit = (updatedItem) =>
+    setItems(items.map((it) => it.id === updatedItem.id ? updatedItem : it));
+
+  const handleUpdateImage = (id, image) =>
+    setItems(items.map((it) => it.id === id ? { ...it, image } : it));
+
+  const handleImport = (newItems) => {
+    const maxId = Math.max(0, ...items.map((i) => i.id));
+    setItems([
+      ...newItems.map((item, idx) => ({ ...item, id: maxId + idx + 1 })),
+      ...items,
+    ]);
+  };
 
   const counts = {
     all:    items.length,
@@ -258,6 +274,8 @@ export default function App() {
                       item={item}
                       onToggleSold={handleToggleSold}
                       onUpdateSalePrice={handleUpdateSalePrice}
+                      onUpdateImage={handleUpdateImage}
+                      onEdit={setEditingItem}
                       onDelete={handleDelete}
                     />
                   ))
@@ -273,14 +291,20 @@ export default function App() {
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Icon name="info" size={12} />
-              Astuce : cliquez sur un prix de vente pour le modifier
+              Astuce : cliquez sur la photo d'un article pour la modifier
             </span>
           </div>
         </div>
       </main>
 
-      <AddItemModal open={showAdd}   onClose={() => setShowAdd(false)}   onAdd={handleAdd} />
-      <ImportModal  open={showImport} onClose={() => setShowImport(false)} onImport={handleAdd} />
+      <AddItemModal open={showAdd}    onClose={() => setShowAdd(false)}    onAdd={handleAdd} />
+      <ImportModal  open={showImport} onClose={() => setShowImport(false)} onImport={handleImport} />
+      <EditItemModal
+        open={!!editingItem}
+        item={editingItem}
+        onClose={() => setEditingItem(null)}
+        onSave={handleEdit}
+      />
     </div>
   );
 }
