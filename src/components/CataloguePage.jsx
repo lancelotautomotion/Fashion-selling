@@ -3,6 +3,7 @@ import Icon from './Icon.jsx';
 import StatusBadge from './StatusBadge.jsx';
 import EditItemModal from './EditItemModal.jsx';
 import { fmtEUR, fmtDate, parseDate, daysBetween } from '../utils/formatters.js';
+import { CATEGORIES } from '../data/initialData.js';
 
 /* ── Constants ─────────────────────────────────────────────────── */
 
@@ -333,15 +334,14 @@ export default function CataloguePage({ items, toggleSold, deleteItem, updateIte
   const [view,         setView]         = useState('grid');
   const [editingItem,  setEditingItem]  = useState(null);
 
-  /* Dynamic filter options */
+  /* Dynamic brand list — trim each value before deduplication */
   const brands = useMemo(
-    () => [...new Set(items.map((i) => i.brand).filter(Boolean))].sort(),
+    () => [...new Set(items.map((i) => i.brand?.trim()).filter(Boolean))].sort(),
     [items],
   );
-  const categories = useMemo(
-    () => [...new Set(items.map((i) => i.category).filter(Boolean))].sort(),
-    [items],
-  );
+
+  /* Full category list from the app's predefined set */
+  const categories = CATEGORIES;
 
   /* Tab counts */
   const counts = useMemo(() => ({
@@ -357,7 +357,7 @@ export default function CataloguePage({ items, toggleSold, deleteItem, updateIte
     if (statusFilter === 'listed') result = result.filter((i) => !i.sold);
     else if (statusFilter === 'sold') result = result.filter((i) => i.sold);
 
-    if (brandFilter) result = result.filter((i) => i.brand === brandFilter);
+    if (brandFilter) result = result.filter((i) => i.brand?.trim() === brandFilter);
     if (catFilter)   result = result.filter((i) => i.category === catFilter);
 
     if (search.trim()) {
