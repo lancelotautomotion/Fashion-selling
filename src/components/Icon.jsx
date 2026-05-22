@@ -3,6 +3,7 @@ import {
   Pencil, Trash2, Plus, X,
   Camera, UploadCloud, ScanLine, CheckCircle2, Check,
   Bell, Calendar, Search, Info, PackageSearch, Circle,
+  Loader2, AlertCircle, LogOut,
 } from 'lucide-react';
 
 const ICONS = {
@@ -24,6 +25,9 @@ const ICONS = {
   search:          Search,
   info:            Info,
   'package-search': PackageSearch,
+  loader:          Loader2,
+  'alert-circle':  AlertCircle,
+  'log-out':       LogOut,
 };
 
 export default function Icon({ name, size = 16, className = '', strokeWidth = 2 }) {
