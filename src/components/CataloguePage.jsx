@@ -10,7 +10,7 @@ import { CATEGORIES } from '../data/initialData.js';
 const STATUS_TABS = [
   { id: 'all',      label: 'Tous',      icon: 'layers' },
   { id: 'listed',   label: 'En stock',  icon: 'package' },
-  { id: 'deferred', label: 'À lister',  icon: 'hourglass' },
+  { id: 'deferred', label: 'En attente', icon: 'hourglass' },
   { id: 'sold',     label: 'Vendus',    icon: 'check-circle' },
 ];
 
@@ -226,8 +226,8 @@ function ListRow({ item, onEdit, onDelete, onToggleSold }) {
         <div className="num text-[13px] font-medium text-ink-800 row-text">{fmtEUR(item.listedPrice)}</div>
         {item.listedDate
           ? <div className="num text-[11px] text-ink-400">{fmtDate(parseDate(item.listedDate))}</div>
-          : <div className="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5">
-              <Icon name="hourglass" size={10} />À lister
+          : <div className="text-[11px] text-rose-500 flex items-center gap-1 mt-0.5">
+              <Icon name="hourglass" size={10} />En attente
             </div>
         }
       </td>

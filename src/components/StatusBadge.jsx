@@ -9,9 +9,9 @@ export default function StatusBadge({ sold, deferred }) {
   }
   if (deferred) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[11px] font-medium border border-amber-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-        À lister
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[11px] font-medium border border-rose-200">
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+        En attente
       </span>
     );
   }
