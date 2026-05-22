@@ -22,12 +22,17 @@ const EMPTY = {
 };
 
 export default function AddItemModal({ open, onClose, onAdd }) {
-  const [form, setForm] = useState(EMPTY);
-  const [image, setImage] = useState(null);
+  const [form,            setForm]            = useState(EMPTY);
+  const [image,           setImage]           = useState(null);
+  const [listingDeferred, setListingDeferred] = useState(false);
   const fileRef = useRef(null);
 
   useEffect(() => {
-    if (open) { setForm({ ...EMPTY, purchaseDate: TODAY, listedDate: TODAY }); setImage(null); }
+    if (open) {
+      setForm({ ...EMPTY, purchaseDate: TODAY, listedDate: TODAY });
+      setImage(null);
+      setListingDeferred(false);
+    }
   }, [open]);
 
   if (!open) return null;
@@ -50,6 +55,7 @@ export default function AddItemModal({ open, onClose, onAdd }) {
       image,
       purchasePrice: parseFloat(form.purchasePrice) || 0,
       listedPrice:   parseFloat(form.listedPrice)   || 0,
+      listedDate:    listingDeferred ? null : form.listedDate,
       sold: false, soldDate: null, salePrice: null,
     });
     onClose();
@@ -148,10 +154,31 @@ export default function AddItemModal({ open, onClose, onAdd }) {
           </Field>
 
           <div className="col-span-2">
-            <Field label="Date de mise en ligne">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[12px] font-medium text-ink-600">Date de mise en ligne</span>
+              <button
+                type="button"
+                onClick={() => setListingDeferred((v) => !v)}
+                className={
+                  'flex items-center gap-1.5 text-[11px] font-medium rounded-full px-2.5 py-1 border transition-colors ' +
+                  (listingDeferred
+                    ? 'bg-amber-50 text-amber-700 border-amber-300'
+                    : 'bg-ink-50 text-ink-500 border-ink-200 hover:bg-ink-100 hover:text-ink-700')
+                }
+              >
+                <Icon name="hourglass" size={11} />
+                Mettre en ligne plus tard
+              </button>
+            </div>
+            {listingDeferred ? (
+              <div className="w-full border border-amber-200 rounded-lg px-3 py-2.5 text-[13px] bg-amber-50 text-amber-700 flex items-center gap-2">
+                <Icon name="hourglass" size={14} />
+                Sera mis en ligne ultérieurement
+              </div>
+            ) : (
               <input type="date" className={INPUT} value={form.listedDate}
                 onChange={(e) => set('listedDate', e.target.value)} />
-            </Field>
+            )}
           </div>
 
           <div className="col-span-2 flex items-center justify-end gap-3 pt-4 border-t border-ink-100 mt-2">

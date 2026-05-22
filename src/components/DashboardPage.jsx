@@ -25,11 +25,12 @@ export default function DashboardPage({ items, loading, addItem, importItems, up
   }), [items, search, filter]);
 
   const kpis = useMemo(() => {
-    const soldItems = items.filter((i) => i.sold);
-    const revenue   = soldItems.reduce((s, i) => s + i.salePrice, 0);
-    const margin    = soldItems.reduce((s, i) => s + (i.salePrice - i.purchasePrice), 0);
-    const avgDays   = soldItems.length
-      ? Math.round(soldItems.reduce((s, i) => s + daysBetween(parseDate(i.listedDate), parseDate(i.soldDate)), 0) / soldItems.length)
+    const soldItems      = items.filter((i) => i.sold);
+    const revenue        = soldItems.reduce((s, i) => s + i.salePrice, 0);
+    const margin         = soldItems.reduce((s, i) => s + (i.salePrice - i.purchasePrice), 0);
+    const soldWithDates  = soldItems.filter((i) => i.listedDate && i.soldDate);
+    const avgDays        = soldWithDates.length
+      ? Math.round(soldWithDates.reduce((s, i) => s + daysBetween(parseDate(i.listedDate), parseDate(i.soldDate)), 0) / soldWithDates.length)
       : 0;
     return { stock: items.filter((i) => !i.sold).length, revenue, margin, avgDays, soldCount: soldItems.length };
   }, [items]);

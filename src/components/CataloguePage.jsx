@@ -8,9 +8,10 @@ import { CATEGORIES } from '../data/initialData.js';
 /* ── Constants ─────────────────────────────────────────────────── */
 
 const STATUS_TABS = [
-  { id: 'listed', label: 'En stock', icon: 'package' },
-  { id: 'sold',   label: 'Vendus',   icon: 'check-circle' },
-  { id: 'all',    label: 'Tous',     icon: 'layers' },
+  { id: 'all',      label: 'Tous',      icon: 'layers' },
+  { id: 'listed',   label: 'En stock',  icon: 'package' },
+  { id: 'deferred', label: 'À lister',  icon: 'hourglass' },
+  { id: 'sold',     label: 'Vendus',    icon: 'check-circle' },
 ];
 
 const SORT_OPTIONS = [
@@ -67,7 +68,7 @@ function ItemCard({ item, onEdit, onDelete, onToggleSold }) {
 
         {/* Status badge */}
         <div className="absolute top-2.5 left-2.5 z-10">
-          <StatusBadge sold={item.sold} />
+          <StatusBadge sold={item.sold} deferred={!item.sold && !item.listedDate} />
         </div>
 
         {/* Action buttons — visible on hover */}
@@ -171,9 +172,9 @@ function GridView({ items, onEdit, onDelete, onToggleSold }) {
 /* ── ListView ───────────────────────────────────────────────────── */
 
 function ListRow({ item, onEdit, onDelete, onToggleSold }) {
-  const margin        = item.sold ? (item.salePrice ?? 0) - item.purchasePrice : null;
+  const margin         = item.sold ? (item.salePrice ?? 0) - item.purchasePrice : null;
   const marginPositive = margin !== null && margin >= 0;
-  const days          = item.sold && item.listedDate && item.soldDate
+  const days           = item.listedDate && item.soldDate
     ? daysBetween(parseDate(item.listedDate), parseDate(item.soldDate))
     : null;
 
@@ -199,7 +200,7 @@ function ListRow({ item, onEdit, onDelete, onToggleSold }) {
               {item.name}
             </div>
             <div className="mt-0.5">
-              <StatusBadge sold={item.sold} />
+              <StatusBadge sold={item.sold} deferred={!item.sold && !item.listedDate} />
             </div>
           </div>
         </div>
@@ -223,7 +224,12 @@ function ListRow({ item, onEdit, onDelete, onToggleSold }) {
       {/* Mise en ligne */}
       <td className="py-3 px-4">
         <div className="num text-[13px] font-medium text-ink-800 row-text">{fmtEUR(item.listedPrice)}</div>
-        <div className="num text-[11px] text-ink-400">{fmtDate(parseDate(item.listedDate))}</div>
+        {item.listedDate
+          ? <div className="num text-[11px] text-ink-400">{fmtDate(parseDate(item.listedDate))}</div>
+          : <div className="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5">
+              <Icon name="hourglass" size={10} />À lister
+            </div>
+        }
       </td>
 
       {/* Vente */}
@@ -345,17 +351,19 @@ export default function CataloguePage({ items, toggleSold, deleteItem, updateIte
 
   /* Tab counts */
   const counts = useMemo(() => ({
-    all:    items.length,
-    listed: items.filter((i) => !i.sold).length,
-    sold:   items.filter((i) => i.sold).length,
+    all:      items.length,
+    listed:   items.filter((i) => !i.sold && i.listedDate).length,
+    deferred: items.filter((i) => !i.sold && !i.listedDate).length,
+    sold:     items.filter((i) => i.sold).length,
   }), [items]);
 
   /* Combined filtering + sorting */
   const filtered = useMemo(() => {
     let result = items;
 
-    if (statusFilter === 'listed') result = result.filter((i) => !i.sold);
-    else if (statusFilter === 'sold') result = result.filter((i) => i.sold);
+    if (statusFilter === 'listed')   result = result.filter((i) => !i.sold && i.listedDate);
+    else if (statusFilter === 'deferred') result = result.filter((i) => !i.sold && !i.listedDate);
+    else if (statusFilter === 'sold')     result = result.filter((i) => i.sold);
 
     if (brandFilter) result = result.filter((i) => i.brand?.trim() === brandFilter);
     if (catFilter)   result = result.filter((i) => i.category === catFilter);

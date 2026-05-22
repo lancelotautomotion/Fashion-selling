@@ -5,7 +5,7 @@ import {
   Bell, Calendar, CalendarRange, Search, Info, PackageSearch, Circle,
   Loader2, AlertCircle, LogOut,
   LayoutDashboard, BarChart2, BarChart3, Activity, Timer,
-  ShoppingBag, LayoutGrid, List, Layers, FolderSearch, Shirt,
+  ShoppingBag, LayoutGrid, List, Layers, FolderSearch, Shirt, Hourglass,
 } from 'lucide-react';
 
 const ICONS = {
@@ -47,6 +47,7 @@ const ICONS = {
   layers:             Layers,
   'folder-search':    FolderSearch,
   shirt:              Shirt,
+  hourglass:          Hourglass,
 };
 
 export default function Icon({ name, size = 16, className = '', strokeWidth = 2 }) {
