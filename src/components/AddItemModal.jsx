@@ -162,7 +162,7 @@ export default function AddItemModal({ open, onClose, onAdd }) {
                 className={
                   'flex items-center gap-1.5 text-[11px] font-medium rounded-full px-2.5 py-1 border transition-colors ' +
                   (listingDeferred
-                    ? 'bg-amber-50 text-amber-700 border-amber-300'
+                    ? 'bg-rose-50 text-rose-600 border-rose-300'
                     : 'bg-ink-50 text-ink-500 border-ink-200 hover:bg-ink-100 hover:text-ink-700')
                 }
               >
@@ -171,7 +171,7 @@ export default function AddItemModal({ open, onClose, onAdd }) {
               </button>
             </div>
             {listingDeferred ? (
-              <div className="w-full border border-amber-200 rounded-lg px-3 py-2.5 text-[13px] bg-amber-50 text-amber-700 flex items-center gap-2">
+              <div className="w-full border border-rose-200 rounded-lg px-3 py-2.5 text-[13px] bg-rose-50 text-rose-600 flex items-center gap-2">
                 <Icon name="hourglass" size={14} />
                 Sera mis en ligne ultérieurement
               </div>

@@ -88,8 +88,8 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdat
         <div className="text-[13px] text-ink-700 row-text num">{fmtEUR(item.listedPrice)}</div>
         {listed
           ? <div className="text-[11px] text-ink-400 num">{fmtDate(listed)}</div>
-          : <div className="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5">
-              <Icon name="hourglass" size={10} />À lister
+          : <div className="text-[11px] text-rose-500 flex items-center gap-1 mt-0.5">
+              <Icon name="hourglass" size={10} />En attente
             </div>
         }
       </td>
