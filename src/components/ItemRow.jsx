@@ -9,11 +9,11 @@ import { resizeImageFile } from '../utils/imageUtils.js';
 export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdateImage, onEdit, onDelete }) {
   const fileRef = useRef(null);
 
-  const listed   = parseDate(item.listedDate);
-  const sold     = item.sold ? parseDate(item.soldDate) : null;
+  const listed   = item.listedDate ? parseDate(item.listedDate) : null;
+  const sold     = item.sold && item.soldDate ? parseDate(item.soldDate) : null;
 
   const margin = item.sold ? (item.salePrice - item.purchasePrice) : null;
-  const days   = item.sold ? daysBetween(listed, sold) : null;
+  const days   = listed && sold ? daysBetween(listed, sold) : null;
   const marginPositive = margin !== null && margin >= 0;
 
   const handleImageChange = async (e) => {
@@ -35,7 +35,7 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdat
       <td className="py-4 px-3">
         <div className="flex items-center gap-2.5">
           <Toggle on={item.sold} onChange={(v) => onToggleSold(item.id, v)} />
-          <StatusBadge sold={item.sold} />
+          <StatusBadge sold={item.sold} deferred={!item.sold && !item.listedDate} />
         </div>
       </td>
 
@@ -86,7 +86,12 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdat
       {/* Listed */}
       <td className="py-4 px-3">
         <div className="text-[13px] text-ink-700 row-text num">{fmtEUR(item.listedPrice)}</div>
-        <div className="text-[11px] text-ink-400 num">{fmtDate(listed)}</div>
+        {listed
+          ? <div className="text-[11px] text-ink-400 num">{fmtDate(listed)}</div>
+          : <div className="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5">
+              <Icon name="hourglass" size={10} />À lister
+            </div>
+        }
       </td>
 
       {/* Sale */}
