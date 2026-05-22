@@ -9,7 +9,6 @@ import { resizeImageFile } from '../utils/imageUtils.js';
 export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdateImage, onEdit, onDelete }) {
   const fileRef = useRef(null);
 
-  const purchase = parseDate(item.purchaseDate);
   const listed   = parseDate(item.listedDate);
   const sold     = item.sold ? parseDate(item.soldDate) : null;
 
@@ -82,7 +81,6 @@ export default function ItemRow({ item, onToggleSold, onUpdateSalePrice, onUpdat
       {/* Purchase */}
       <td className="py-4 px-3">
         <div className="text-[13px] text-ink-700 row-text num">{fmtEUR(item.purchasePrice)}</div>
-        <div className="text-[11px] text-ink-400 num">{fmtDate(purchase)}</div>
       </td>
 
       {/* Listed */}

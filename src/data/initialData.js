@@ -7,6 +7,8 @@ export const CATEGORIES = [
   'Sacs & Accessoires',
   'T-shirts & Tops',
   'Jupes',
+  'Short',
+  'Autre',
 ];
 
 export const SEED_ITEMS = [

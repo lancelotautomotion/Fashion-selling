@@ -137,25 +137,22 @@ export default function AddItemModal({ open, onClose, onAdd }) {
               value={form.brand} onChange={(e) => set('brand', e.target.value)} />
           </Field>
 
-          <Field label="Date d'achat">
-            <input type="date" className={INPUT} value={form.purchaseDate}
-              onChange={(e) => set('purchaseDate', e.target.value)} />
-          </Field>
-
           <Field label="Prix d'achat (€)">
             <input type="number" step="0.5" className={INPUT + ' num'} placeholder="0,00"
               value={form.purchasePrice} onChange={(e) => set('purchasePrice', e.target.value)} />
-          </Field>
-
-          <Field label="Date de mise en ligne">
-            <input type="date" className={INPUT} value={form.listedDate}
-              onChange={(e) => set('listedDate', e.target.value)} />
           </Field>
 
           <Field label="Prix de mise en ligne (€)">
             <input type="number" step="0.5" className={INPUT + ' num'} placeholder="0,00"
               value={form.listedPrice} onChange={(e) => set('listedPrice', e.target.value)} />
           </Field>
+
+          <div className="col-span-2">
+            <Field label="Date de mise en ligne">
+              <input type="date" className={INPUT} value={form.listedDate}
+                onChange={(e) => set('listedDate', e.target.value)} />
+            </Field>
+          </div>
 
           <div className="col-span-2 flex items-center justify-end gap-3 pt-4 border-t border-ink-100 mt-2">
             <button type="button" onClick={onClose}
