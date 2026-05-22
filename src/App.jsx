@@ -3,12 +3,14 @@ import { supabase } from './lib/supabase.js';
 import { useItems } from './hooks/useItems.js';
 import DashboardPage from './components/DashboardPage.jsx';
 import StatisticsPage from './components/StatisticsPage.jsx';
+import CataloguePage from './components/CataloguePage.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import Icon from './components/Icon.jsx';
 
 const NAV_ITEMS = [
-  { id: 'dashboard',   label: 'Tableau de bord', icon: 'layout-dashboard' },
-  { id: 'statistics',  label: 'Statistiques',    icon: 'bar-chart-2' },
+  { id: 'dashboard',  label: 'Tableau de bord', icon: 'layout-dashboard' },
+  { id: 'statistics', label: 'Statistiques',    icon: 'bar-chart-2' },
+  { id: 'catalogue',  label: 'Catalogue',        icon: 'layout-grid' },
 ];
 
 export default function App() {
@@ -71,16 +73,13 @@ export default function App() {
                 {label}
               </button>
             ))}
-            {/* Placeholder items — not implemented yet */}
-            {['Catalogue', 'Paramètres'].map((l) => (
-              <span
-                key={l}
-                className="px-3 py-1.5 rounded-lg text-ink-300 cursor-not-allowed select-none"
-                title="Bientôt disponible"
-              >
-                {l}
-              </span>
-            ))}
+            {/* Placeholder — not implemented yet */}
+            <span
+              className="px-3 py-1.5 rounded-lg text-ink-300 cursor-not-allowed select-none"
+              title="Bientôt disponible"
+            >
+              Paramètres
+            </span>
           </nav>
 
           {/* User actions */}
@@ -120,8 +119,16 @@ export default function App() {
       </header>
 
       {/* ── Page content ── */}
-      {activePage === 'dashboard' && <DashboardPage {...itemsApi} />}
+      {activePage === 'dashboard'  && <DashboardPage {...itemsApi} />}
       {activePage === 'statistics' && <StatisticsPage items={itemsApi.items} />}
+      {activePage === 'catalogue'  && (
+        <CataloguePage
+          items={itemsApi.items}
+          toggleSold={itemsApi.toggleSold}
+          deleteItem={itemsApi.deleteItem}
+          updateItem={itemsApi.updateItem}
+        />
+      )}
     </div>
   );
 }
